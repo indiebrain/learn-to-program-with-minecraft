@@ -1,0 +1,13 @@
+version: "2.4"
+services:
+  app:
+    image: "itzg/minecraft-server"
+    env_file:
+      - .env
+    ports:
+      - "50042:25565"
+    volumes:
+      - "./worlds/${CURRENT_WORLD:-default}:/data"
+    restart: always
+    cpu_count: 4
+    mem_reservation: 5GB

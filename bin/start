@@ -1,0 +1,12 @@
+# start
+#
+# Purpose:
+#
+#  Start the minecraft server and API
+#
+# Usage:
+#  bin/start
+
+echo "Starting the minecraft server..."
+docker-compose up -d
+echo "Minecraft server is starting. To view the logs run bin/logs"

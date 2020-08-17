@@ -1,0 +1,10 @@
+# logs
+#
+# Purpose:
+#
+#  View and follow the logs
+#
+# Usage:
+#  bin/logs
+
+docker-compose logs -f

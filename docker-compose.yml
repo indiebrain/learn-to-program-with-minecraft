@@ -1,0 +1,15 @@
+version: "2.4"
+volumes:
+  data:
+services:
+  app:
+    image: "itzg/minecraft-server"
+    env_file:
+      - .env
+    ports:
+      - "25565:25565"
+      - "4711:4711" # RaspberryJuice (Minecraft Python API)
+    volumes:
+      - "data:/data"
+      - "./plugins:/data/plugins"
+    restart: always

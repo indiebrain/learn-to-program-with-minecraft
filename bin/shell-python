@@ -1,0 +1,13 @@
+# shell-python
+#
+# Purpose:
+#
+#  Start an interactive python shell in which one can interact with
+#  the Minecraft server
+#
+# Usage:
+#  bin/shell-python
+
+echo "Starting python shell..."
+echo "Remember to import the minecraft client via: from mcpi.minecraft import Minecraft"
+pipenv run python

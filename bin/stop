@@ -1,0 +1,12 @@
+# stop
+#
+# Purpose:
+#
+#  Stop the minecraft server and API
+#
+# Usage:
+#  bin/stop
+
+echo "Stopping the minecraft server..."
+docker-compose down
+echo "Minecraft server is stopped."

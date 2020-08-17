@@ -1,0 +1,160 @@
+# setup
+#
+# Purpose:
+#
+#  To install all of the software needed to get started with the book
+#  "Learning to Program with Minecraft" by Craig Richardson
+#
+# Usage:
+#  ./setup
+
+set -Eeo pipefail
+
+function fail() {
+    echo "
+--- setup - Failed
+
+Try opeining a new terminal session and re-running this script."
+}
+trap fail ERR
+
+function ensure_macos() {
+    echo "Checking OS compatibility"
+    if [[ "$(uname)" != "Darwin" ]]
+    then
+        echo "Looks like you're not on a macOS host. We don't support non-macOS hosts. Exiting"
+        exit 1
+    fi
+}
+
+function ensure_homebrew() {
+    if command -v brew > /dev/null
+    then
+        echo "Homebrew is already present on this host."
+    else
+        echo "Installing homebrew (https://brew.sh) now"
+        ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+    fi
+}
+
+function install_system_dependencies() {
+    echo "Installing system packages"
+    brew bundle check || brew bundle install
+}
+
+function ensure_docker_running() {
+    echo "Ensuring that docker is running"
+    if ! docker info > /dev/null
+    then
+        echo "Docker is down. Starting docker."
+        open /Applications/Docker.app &
+        wait $! # Wait for 'open' job to exit, doesn't mean the docker daemon is ready. So next we wait for a bit to give it a chance to start.
+
+        echo "Waiting to the docker daemon to become available, this might take a minute."
+        local max_attempts=300
+        local attempts=0
+        local docker_up=
+
+        while [[ -z "$docker_up" ]] && [ $attempts -le $max_attempts ]
+        do
+            if docker ps &> /dev/null
+            then
+                docker_up=true
+                echo "docker is up."
+            else
+                attempts=$((attempts+1))
+                printf '.'
+                sleep 1
+            fi
+        done
+
+        if [[ $attempts -eq $max_attempts ]]
+        then
+            echo "Failed to start docker within a reasonable amount of time. It might be that docker was extremely slow to start, OR there could be a bigger problem with docker on your host. Either way, we can't do much more right now. Exiting"
+            exit 1
+        fi
+    else
+        echo "Docker is up."
+    fi
+}
+
+function install_asdf_bash_config() {
+    if ! grep -q "source $HOME/.asdf/asdf.sh" "$HOME/.bash_profile"
+    then
+        echo "Appending asdf initialization to ~/.bash_profile"
+        echo "source $HOME/.asdf/asdf.sh" >> "$HOME/.bash_profile"
+    fi
+
+    if ! grep -q  "source $HOME/.asdf/completions/asdf.bash" "$HOME/.bash_profile"
+    then
+        echo "Appending bash completions to ~/.bash_profile"
+        echo "source $HOME/.asdf/completions/asdf.bash" >> "$HOME/.bash_profile"
+    fi
+
+    source "$HOME/.asdf/asdf.sh"
+}
+
+function install_asdf_zsh_config() {
+    if ! grep -q "source $HOME/.asdf/asdf.sh" "$HOME/.zshrc"
+    then
+        echo "Appending asdf initialization to ~/.zshrc"
+        echo "source $HOME/.asdf/asdf.sh" >> "$HOME/.zshrc"
+    fi
+
+    source "$HOME/.asdf/asdf.sh"
+
+    echo "There are many ways to configure completions for zsh, we don't know which one you use so have a look at the asdf documetnation to figure out how to add completions for whichever framework you use: https://asdf-vm.com/#/core-manage-asdf-vm"
+}
+
+function install_asdf_shell_config() {
+    echo "Adding asdf initialization to shell configuration. Close and reopen your terminal to ensure shell configuration is loaded and asdf is on your PATH."
+    case "$SHELL" in
+        *"bash")
+            install_asdf_bash_config
+            ;;
+        *"zsh")
+            install_asdf_zsh_config
+            ;;
+    esac
+}
+
+function ensure_asdf_present() {
+    echo "Ensuring asdf-vm is present on the host"
+    if command -v asdf
+    then
+        echo "Found an existing installation of asdf-vm"
+    else
+        if [[ ! -d "$HOME/.asdf" ]]
+        then
+            echo "asdf-vm was not found. Installing into ~/.asdf now"
+            git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.7.8
+        fi
+        install_asdf_shell_config
+    fi
+}
+
+function install_python() {
+    asdf plugin add python || true
+    asdf install
+}
+
+function install_python_dependencies() {
+    pip install --no-cache-dir pipenv
+}
+
+function copy_example_configuration() {
+    cp .env.example .env
+}
+
+echo "--- setup - Begin"
+ensure_macos
+ensure_homebrew
+install_system_dependencies
+ensure_asdf_present
+install_python
+install_python_dependencies
+ensure_docker_running
+copy_example_configuration
+echo "--- setup - Success"
+echo
+echo "Now restart your terminal and start the Minecraft server via bin/start."
